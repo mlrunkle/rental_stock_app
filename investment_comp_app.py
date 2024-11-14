@@ -3,10 +3,11 @@
 import streamlit as st
 import numpy as np
 import numpy_financial as npf  # Updated import
-import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.pyplot as plt  # Seaborn builds on top of matplotlib
 
-# Set page configuration
-st.set_page_config(page_title="Investment Comparison Tool", layout="wide")
+# Set Seaborn style
+sns.set_theme(context='notebook', style='darkgrid', palette='pastel', font='sans-serif', font_scale=1, color_codes=True, rc=None)
 
 # Title and description
 st.title("Real Estate vs. Stock Market Investment Comparison")
@@ -166,40 +167,60 @@ with col2:
 
 st.header("Investment Performance Over Time")
 
-# Equity and Property Value Over Time (Real Estate)
-st.subheader("Real Estate Investment Over Time")
+# Prepare DataFrames for Seaborn
 years = np.arange(1, holding_period_years + 1)
 
-fig1, ax1 = plt.subplots()
-ax1.plot(years, real_estate_results['property_value_list'], label='Property Value', marker='o')
-ax1.plot(years, real_estate_results['mortgage_balance_list'], label='Mortgage Balance', marker='o')
-ax1.plot(years, real_estate_results['equity_list'], label='Equity', marker='o')
-ax1.set_xlabel('Year')
-ax1.set_ylabel('Amount ($)')
+import pandas as pd
+
+# Real Estate DataFrame
+real_estate_df = pd.DataFrame({
+    'Year': years,
+    'Property Value': real_estate_results['property_value_list'],
+    'Mortgage Balance': real_estate_results['mortgage_balance_list'],
+    'Equity': real_estate_results['equity_list'],
+    'Annual Cash Flow': real_estate_results['annual_cash_flow_list']
+})
+
+# Stock Market DataFrame
+stock_df = pd.DataFrame({
+    'Year': years,
+    'Portfolio Value': stock_results['portfolio_values'][1:],
+    'Annual Return': stock_results['annual_returns']
+})
+
+# Equity and Property Value Over Time (Real Estate)
+st.subheader("Real Estate Investment Over Time")
+
+fig1, ax1 = plt.subplots(figsize=(10, 6))
+sns.lineplot(data=real_estate_df, x='Year', y='Property Value', marker='o', label='Property Value', ax=ax1)
+sns.lineplot(data=real_estate_df, x='Year', y='Mortgage Balance', marker='o', label='Mortgage Balance', ax=ax1)
+sns.lineplot(data=real_estate_df, x='Year', y='Equity', marker='o', label='Equity', ax=ax1)
 ax1.set_title('Real Estate Investment Over Time')
+ax1.set_ylabel('Amount ($)')
 ax1.legend()
 st.pyplot(fig1)
 
 # Cash Flows Comparison
 st.subheader("Annual Cash Flows Comparison")
 
-fig2, ax2 = plt.subplots()
-ax2.bar(years - 0.2, real_estate_results['annual_cash_flow_list'], width=0.4, label='Real Estate Cash Flow')
-ax2.bar(years + 0.2, stock_results['annual_returns'], width=0.4, label='Stock Market Return')
-ax2.set_xlabel('Year')
-ax2.set_ylabel('Annual Cash Flow ($)')
+combined_cash_flow_df = pd.DataFrame({
+    'Year': years,
+    'Real Estate Cash Flow': real_estate_results['annual_cash_flow_list'],
+    'Stock Market Return': stock_results['annual_returns']
+}).melt(id_vars='Year', var_name='Investment Type', value_name='Annual Cash Flow')
+
+fig2, ax2 = plt.subplots(figsize=(10, 6))
+sns.barplot(data=combined_cash_flow_df, x='Year', y='Annual Cash Flow', hue='Investment Type', ax=ax2)
 ax2.set_title('Annual Cash Flows: Real Estate vs. Stock Market')
-ax2.legend()
 st.pyplot(fig2)
 
 # Portfolio Value Over Time (Stock Market)
 st.subheader("Stock Market Investment Over Time")
 
-fig3, ax3 = plt.subplots()
-ax3.plot(years, stock_results['portfolio_values'][1:], label='Portfolio Value', marker='o', color='green')
-ax3.set_xlabel('Year')
-ax3.set_ylabel('Portfolio Value ($)')
+fig3, ax3 = plt.subplots(figsize=(10, 6))
+sns.lineplot(data=stock_df, x='Year', y='Portfolio Value', marker='o', color='green', label='Portfolio Value', ax=ax3)
 ax3.set_title('Stock Market Investment Over Time')
+ax3.set_ylabel('Portfolio Value ($)')
 ax3.legend()
 st.pyplot(fig3)
 
